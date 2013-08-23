@@ -41,7 +41,7 @@ def add_network_segment(session, network_id, segment):
             segmentation_id=segment.get(api.SEGMENTATION_ID)
         )
         session.add(record)
-    LOG.info(_("Added segment %(id)s of type %(network_type)s for network"
+    LOG.error(_("Added segment %(id)s of type %(network_type)s for network"
                " %(network_id)s"),
              {'id': record.id,
               'network_type': record.network_type,
