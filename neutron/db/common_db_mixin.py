@@ -76,7 +76,8 @@ class CommonDbMixin(object):
         # NOTE(jkoelker) non-admin queries are scoped to their tenant_id
         # NOTE(salvatore-orlando): unless the model allows for shared objects
         query_filter = None
-        if not context.is_admin and hasattr(model, 'tenant_id'):
+        #if not context.is_admin and hasattr(model, 'tenant_id'):
+        if (not context.is_admin and hasattr(model, 'tenant_id')) and (not context.is_advsvc and hasattr(model, 'tenant_id')):
             if hasattr(model, 'shared'):
                 query_filter = ((model.tenant_id == context.tenant_id) |
                                 (model.shared == sql.true()))

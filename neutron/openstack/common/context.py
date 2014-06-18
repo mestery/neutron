@@ -40,11 +40,13 @@ class RequestContext(object):
     """
 
     def __init__(self, auth_token=None, user=None, tenant=None, is_admin=False,
-                 read_only=False, show_deleted=False, request_id=None):
+                 read_only=False, show_deleted=False, request_id=None,
+                 is_advsvc=False):
         self.auth_token = auth_token
         self.user = user
         self.tenant = tenant
         self.is_admin = is_admin
+        self.is_advsvc = is_advsvc
         self.read_only = read_only
         self.show_deleted = show_deleted
         if not request_id:
@@ -55,6 +57,7 @@ class RequestContext(object):
         return {'user': self.user,
                 'tenant': self.tenant,
                 'is_admin': self.is_admin,
+                'is_advsvc': self.is_advsvc,
                 'read_only': self.read_only,
                 'show_deleted': self.show_deleted,
                 'auth_token': self.auth_token,
