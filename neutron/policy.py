@@ -35,6 +35,7 @@ LOG = logging.getLogger(__name__)
 _POLICY_PATH = None
 _POLICY_CACHE = {}
 ADMIN_CTX_POLICY = 'context_is_admin'
+ADVSVC_CTX_POLICY = 'context_is_advsvc'
 # Maps deprecated 'extension' policies to new-style policies
 DEPRECATED_POLICY_MAP = {
     'extension:provider_network':
@@ -324,6 +325,7 @@ def _prepare_check(context, action, target):
         target = {}
     match_rule = _build_match_rule(action, target)
     credentials = context.to_dict()
+    LOG.debug("KADM---> (pc) match_rule (%s), target (%s), credentials (%s)" % (match_rule, target, credentials))
     return match_rule, target, credentials
 
 
@@ -344,6 +346,7 @@ def check(context, action, target, plugin=None, might_not_exist=False):
 
     :return: Returns True if access is permitted else False.
     """
+    LOG.debug("KADM---> action (%s), target (%s)" % (action, target))
     if might_not_exist and not (policy._rules and action in policy._rules):
         return True
     return policy.check(*(_prepare_check(context, action, target)))
@@ -366,6 +369,7 @@ def enforce(context, action, target, plugin=None):
 
     rule, target, credentials = _prepare_check(context, action, target)
     result = policy.check(rule, target, credentials, action=action)
+    LOG.debug("KADM---> (enforce) action (%s), target (%s)" % (action, target))
     if not result:
         LOG.debug(_("Failed policy check for '%s'"), action)
         raise exceptions.PolicyNotAuthorized(action=action)
@@ -383,6 +387,19 @@ def check_is_admin(context):
     admin_policy = (ADMIN_CTX_POLICY in policy._rules
                     and ADMIN_CTX_POLICY or 'role:admin')
     return policy.check(admin_policy, target, credentials)
+
+
+def check_is_advsvc(context):
+    """Verify context has advsvc rights according to policy settings."""
+    init()
+    # the target is user-self
+    credentials = context.to_dict()
+    target = credentials
+    # Backward compatibility: if ADVSVC_CTX_POLICY is not
+    # found, default to validating role:admin
+    advsvc_policy = (ADVSVC_CTX_POLICY or ADVSVC_CTX_POLICY in policy._rules
+                    and ADVSVC_CTX_POLICY or 'role:advsvc')
+    return policy.check(advsvc_policy, target, credentials)
 
 
 def _extract_roles(rule, roles):

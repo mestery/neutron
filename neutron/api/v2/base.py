@@ -136,6 +136,7 @@ class Controller(object):
         for attr_name in data.keys():
             attr_data = self._attr_info.get(attr_name)
             if attr_data and attr_data['is_visible']:
+                LOG.debug("KADM---> Checking policy")
                 if policy.check(
                     context,
                     '%s:%s' % (self._plugin_handlers[self.SHOW], attr_name),
@@ -187,6 +188,7 @@ class Controller(object):
                 try:
                     resource = self._item(request, id, True)
                 except exceptions.PolicyNotAuthorized:
+                    LOG.debug("KADM---> EXCEPTION!")
                     msg = _('The resource could not be found.')
                     raise webob.exc.HTTPNotFound(msg)
                 body = kwargs.pop('body', None)
@@ -195,6 +197,7 @@ class Controller(object):
                     arg_list.append(body)
                 # It is ok to raise a 403 because accessibility to the
                 # object was checked earlier in this method
+                LOG.debug("KADM---> Checking policy enforcement!")
                 policy.enforce(request.context, name, resource)
                 return getattr(self._plugin, name)(*arg_list, **kwargs)
             return _handle_action
@@ -246,6 +249,7 @@ class Controller(object):
             # FIXME(salvatore-orlando): obj_getter might return references to
             # other resources. Must check authZ on them too.
             # Omit items from list that should not be visible
+            LOG.debug("KADM---> Checking policy (%s)" % request)
             obj_list = [obj for obj in obj_list
                         if policy.check(request.context,
                                         self._plugin_handlers[self.SHOW],
@@ -283,6 +287,7 @@ class Controller(object):
         # FIXME(salvatore-orlando): obj_getter might return references to
         # other resources. Must check authZ on them too.
         if do_authz:
+            LOG.debug("KADM---> Checking policy enforcement (authz)")
             policy.enforce(request.context, action, obj)
         return obj
 
@@ -391,6 +396,7 @@ class Controller(object):
         for item in items:
             self._validate_network_tenant_ownership(request,
                                                     item[self._resource])
+            LOG.debug("KADM---> Checking policy enforcement!")
             policy.enforce(request.context,
                            action,
                            item[self._resource])
@@ -462,6 +468,7 @@ class Controller(object):
         parent_id = kwargs.get(self._parent_id_name)
         obj = self._item(request, id, parent_id=parent_id)
         try:
+            LOG.debug("KADM---> Checking policy enforcement!")
             policy.enforce(request.context,
                            action,
                            obj)
@@ -513,6 +520,7 @@ class Controller(object):
         orig_object_copy = copy.copy(orig_obj)
         orig_obj.update(body[self._resource])
         try:
+            LOG.debug("KADM---> Checking policy enforcement!")
             policy.enforce(request.context,
                            action,
                            orig_obj)
@@ -645,7 +653,7 @@ class Controller(object):
     def _validate_network_tenant_ownership(self, request, resource_item):
         # TODO(salvatore-orlando): consider whether this check can be folded
         # in the policy engine
-        if (request.context.is_admin or
+        if (request.context.is_admin or request.context.is_advsvc or
                 self._resource not in ('port', 'subnet')):
             return
         network = self._plugin.get_network(
